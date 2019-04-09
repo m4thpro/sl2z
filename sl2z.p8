@@ -42,8 +42,7 @@ end
 
 matrix = random_sl2z()
 word = ""
-matrix = {{1,0},{0,1}}
-drawn = {{1,0},{0,1}}
+drawn = matrix
 timer = 0
 
 function _update()
