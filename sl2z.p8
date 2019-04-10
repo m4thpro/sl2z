@@ -115,13 +115,14 @@ function _update()
    end
 end
 
-function printo(text,x,y)
+function printo(text,x,y,c)
+   c = c or 8
    for i= -1,1 do
       for j= -1,1 do
 	 print(text,x+i,y+j,0)
       end
    end
-   print(text,x,y,15)
+   print(text,x,y,c)
 end
 
 function padded(i, s)
@@ -206,17 +207,23 @@ function _draw()
    --print( stat(1),50,50 )
 
    pal(15,0)
-   spr(64, 20, 20, 1, 4)
-   pal(15,15)
+   local left = max(#tostr(drawn[1][1]),#tostr(drawn[1][2]))
+   local right = max(#tostr(drawn[2][1]),#tostr(drawn[2][2]))
    
-   printo(drawn[1][1],10,20)
-   printo(drawn[2][1],30,20)
-   printo(drawn[1][2],10,30)
-   printo(drawn[2][2],30,30)
-   printo(word,10,40)
+   local center_y = 45
+   spr(64, 64 - left*4 - 12, 1 + center_y - 16, 1, 4)
+   spr(64, 64 + right*4 + 12, 1 + center_y - 16, 1, 4, true)
+   pal(15,15)
 
-   printo("score " .. padded(6,bignum(score)) .. " time " .. padded(3,tostr(flr(10*remaining_time))),64 - (21*4)/2,2)
-   printo("   hi " .. padded(6,bignum(dget(0))) ,64 - (21*4)/2,8)
+   printo(drawn[1][1],64 - #tostr(drawn[1][1])*4,center_y - 6,7)
+   printo(drawn[2][1],64 + 9 + right * 4 - #tostr(drawn[2][1])*4,center_y - 6,7)
+   printo(drawn[1][2],64 - #tostr(drawn[1][2])*4,center_y + 5,7)
+   printo(drawn[2][2],64 + 9 + right * 4 - #tostr(drawn[2][2])*4,center_y + 5,7)
+
+   printo(word,64 - 4*#word,center_y + 30, 7)
+
+   printo("score " .. padded(6,bignum(score)) .. " time " .. padded(3,tostr(flr(10*remaining_time))),64 - (21*4)/2,2, 6)
+   printo("   hi " .. padded(6,bignum(dget(0))) ,64 - (21*4)/2,8, 5)
 end
 
 function _init()
