@@ -61,13 +61,23 @@ function _update()
       timer = time()
    end
 
-   --if matrix[1][1] == 1 and matrix[2][1] == 0 and matrix[1][2] == 0 and matrix[2][2] == 1 then
-   --matrix = random_sl2z()
-   --end
+   if matrix[1][1] == 1 and matrix[2][1] == 0 and matrix[1][2] == 0 and matrix[2][2] == 1 then
+      matrix = random_sl2z()
+      drawn = matrix
+   end
+end
+
+function printo(text,x,y)
+   for i= -1,1 do
+      for j= -1,1 do
+	 print(text,x+i,y+j,0)
+      end
+   end
+   print(text,x,y,15)
 end
 
 function _draw()
-   local speed = 0.8
+   local speed = 1.0
    local t = (time() - timer) / speed
    local s = 1 - t
 
@@ -86,7 +96,6 @@ function _draw()
    local dy, ny
    local cx, cy
 
-   local scale  = 0.5
    local x, c
 
    local dxd = m01^2/256 + 1/8*m01*m11
@@ -98,12 +107,16 @@ function _draw()
    
    local y = 127 / 32
    local y2 = y*y
+
+   local dx0 = 4*m012 + m11*(m11 - 4*m01)
+   local nx0 = 4*m0001 - 2*m01*m10 - 2*m00*m11 + m10*m11
+   local dy0 = 4*m012 - 4*m01*m11 + m11^2
    
    for j = 1, 64 do
-      dx =  m012*y2 + 4*m012 - 4*m01*m11 + m11^2
-      nx =  m0001*y2 + 4*m0001 - 2*m01*m10 - 2*m00*m11 + m10*m11
-      dy =  m012*y2 + 4*m012 - 4*m01*m11 + m11^2
-      ny =  -m01*m10*y + m00*m11*y
+      dx =  m012*y2 + dx0
+      nx =  m0001*y2 + nx0
+      dy =  m012*y2 + dy0
+      ny =  (-m01*m10 + m00*m11)*y
       y2 += 1/256 - y/8
       y -= 1/16
       
@@ -122,13 +135,13 @@ function _draw()
       vmem = vmem + 64
    end
 
-   print( stat(1),50,50 )
+   --print( stat(1),50,50 )
    
-   print(drawn[1][1],10,10)
-   print(drawn[2][1],30,10)
-   print(drawn[1][2],10,20)
-   print(drawn[2][2],30,20)
-   print(word,10,40)
+   printo(drawn[1][1],10,10)
+   printo(drawn[2][1],30,10)
+   printo(drawn[1][2],10,20)
+   printo(drawn[2][2],30,20)
+   printo(word,10,40)
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
