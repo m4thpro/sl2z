@@ -5,7 +5,8 @@ __lua__
 cartdata("kisonecat_sl2z_1")
 
 state = "playing"
-
+low_time = 10
+   
 generators = {
    {{1, 0},{ 1,1}},
    {{1, 0},{-1,1}},
@@ -140,9 +141,9 @@ function _update_playing()
    end
 
    remaining_time = deadline - time()
-
+   
    -- play "almost out of time" tune
-   if (remaining_time < 10) and not almost_out_of_time then
+   if (remaining_time < low_time) and not almost_out_of_time then
       almost_out_of_time = true
       sfx(7)
    end
@@ -287,7 +288,7 @@ function _draw_playing()
    printo("score " .. padded(6,bignum(score)), 6, 2, 6)
    printo("   hi " .. padded(6,bignum(dget(0))) ,6,8, 5)
    local timecolor = 6
-   if (remaining_time < 10) then
+   if (remaining_time < low_time) then
       timecolor = 8 + ((time() % 0.5 > 0.25) and 0 or 1)
    end
    printo(" time " .. padded(3,tostr(flr(10*remaining_time))),54,2, timecolor)
