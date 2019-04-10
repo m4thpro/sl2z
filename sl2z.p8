@@ -67,8 +67,6 @@ function _update()
 end
 
 function _draw()
-   cls()
-
    local speed = 0.8
    local t = (time() - timer) / speed
    local s = 1 - t
@@ -98,12 +96,12 @@ function _draw()
 
    local start = time()
    
-   for j = 1, 128 do
+   for j = 1, 64 do
       dx =  m01^2*y^2 + 4*m01^2 - 4*m01*m11 + m11^2
       nx =  m00*m01*y^2 + 4*m00*m01 - 2*m01*m10 - 2*m00*m11 + m10*m11
       dy =  m01^2*y^2 + 4*m01^2 - 4*m01*m11 + m11^2
       ny =  -m01*m10*y + m00*m11*y
-      y -= 1/32
+      y -= 1/16
       
       x = -2
       for i = 1, 64 do
@@ -114,8 +112,10 @@ function _draw()
 	 
 	 local c = (flr(2*nx/dx)%8) + (flr(2*ny/dy)%8)
 	 poke( vmem, c + 16*c )
+	 poke( vmem + 64, c + 16*c )
 	 vmem = vmem + 1
-      end      
+      end
+      vmem = vmem + 64
    end
 
    print( stat(1),50,50 )
