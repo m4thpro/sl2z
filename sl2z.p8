@@ -49,6 +49,7 @@ function start_round()
    drawn = matrix
    timer = 0
    deadline = time() + 24
+   almost_out_of_time = false
 end
 
 function start_playing()
@@ -96,10 +97,14 @@ function _update_playing()
    local action = nil
    local symbol = nil
 
-   if (btnp(0)) then symbol = "\139"; action = generators[1] end
-   if (btnp(1)) then symbol = "\145"; action = generators[2] end
-   if (btnp(2)) then symbol = "\148"; action = generators[3] end
-   if (btnp(3)) then symbol = "\131"; action = generators[4] end
+   -- prevent diagonal movement
+   if (btnp(0) and 1 or 0) + (btnp(1) and 1 or 0) + (btnp(2) and 1 or 0) + (btnp(3) and 1 or 0) == 1 then
+      if (btnp(0)) then symbol = "\139"; action = generators[1] end
+      if (btnp(1)) then symbol = "\145"; action = generators[2] end
+      if (btnp(2)) then symbol = "\148"; action = generators[3] end
+      if (btnp(3)) then symbol = "\131"; action = generators[4] end
+   end
+   
    if (btnp(4)) then
       if #word > 0 then
 	 local last = sub(word,#word,#word)
@@ -128,11 +133,18 @@ function _update_playing()
       end
    end
 
-   remaining_time = deadline - time()
-
+   -- lose if too many buttons have been pressed
    if #word > 13 then
       die()
       start_round()
+   end
+
+   remaining_time = deadline - time()
+
+   -- play "almost out of time" tune
+   if (remaining_time < 10) and not almost_out_of_time then
+      almost_out_of_time = true
+      sfx(7)
    end
    
    if (remaining_time < 0) then
@@ -147,9 +159,8 @@ function _update_playing()
       sfx(6,0) -- win
       score = score + shr(flr(10*remaining_time),16)
 
-      if (score > dget(0)) then
-	 dset(0, score)
-      end
+      -- set the high score
+      if (score > dget(0)) then dset(0, score) end
    end
 end
 
@@ -505,3 +516,4 @@ __sfx__
 000a00001c4500845008450180001e0001d000180001c0001c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000400001bb501db5020b502ab5029b0037b0026b0026b0000b0000b0000b0000b0000b0000b0026b0028b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b00
 0008000019d501dd5021d501cd5020d5025d5020d5026d502bd5000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d00
+0003000004e5004e5009e0008e3009e000be500be5009e0009e000de500de3009e000fe500fe3000e0012e5012e3000e000fe500fe3001e0012e5012e4000e000fe500fe3000e0012e5012e4000e000fe500fe30
