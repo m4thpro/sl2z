@@ -69,7 +69,7 @@ end
 function _draw()
    cls()
 
-   local speed = 0.25
+   local speed = 0.8
    local t = (time() - timer) / speed
    local s = 1 - t
 
@@ -95,6 +95,8 @@ function _draw()
    local dxd = m01^2/256 + 1/8*m01*m11
    local nxd = m00*m01/256 + m01*m10/16 + m00*m11/16
    local dyd = m01^2/256 + m01*m11/8
+
+   local start = time()
    
    for j = 1, 128 do
       dx =  m01^2*y^2 + 4*m01^2 - 4*m01*m11 + m11^2
@@ -110,17 +112,18 @@ function _draw()
 	 dy +=  m01^2*x/8 + dyd
 	 x += 1/16
 	 
-	 if (ny % dy < 0.5 * dy) == (nx % dx < 0.5 * dx) then
-	    poke( vmem, 17 )
-	 end
+	 local c = (flr(2*nx/dx)%8) + (flr(2*ny/dy)%8)
+	 poke( vmem, c + 16*c )
 	 vmem = vmem + 1
       end      
    end
-    
-   print(matrix[1][1],10,10)
-   print(matrix[2][1],30,10)
-   print(matrix[1][2],10,20)
-   print(matrix[2][2],30,20)
+
+   print( stat(1),50,50 )
+   
+   print(drawn[1][1],10,10)
+   print(drawn[2][1],30,10)
+   print(drawn[1][2],10,20)
+   print(drawn[2][2],30,20)
    print(word,10,40)
 end
 __gfx__
