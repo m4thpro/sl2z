@@ -7,5 +7,5 @@ inverses, as are right and left, and a button press acts as an "undo."
 If you multiply by too many matrices, you also lose.
 
 The background displays the upper half plane transformed by the
-corresponding fractional linear transformation.  Consequently, you can
+corresponding linear fractional transformation.  Consequently, you can
 also think of your goal as restoring a "quilt" pattern.
