@@ -40,30 +40,61 @@ function random_sl2z()
    return result
 end
 
-matrix = random_sl2z()
-word = ""
-drawn = matrix
-timer = 0
+function start_round()
+   matrix = random_sl2z()
+   word = ""
+   drawn = matrix
+   timer = 0
+end
+
+function simplify(word)
+   for i = 0, #word - 1 do
+      if sub(word,i,i+1) == "\139\145" then
+	 return sub(word,1,i-1) .. sub(word,i+2,#word)
+      end
+      if sub(word,i,i+1) == "\145\139" then
+	 return sub(word,1,i-1) .. sub(word,i+2,#word)
+      end
+      if sub(word,i,i+1) == "\148\131" then
+	 return sub(word,1,i-1) .. sub(word,i+2,#word)
+      end
+      if sub(word,i,i+1) == "\131\148" then
+	 return sub(word,1,i-1) .. sub(word,i+2,#word)
+      end
+   end
+
+   return word
+end
 
 function _update()
    local action = nil
    local symbol = nil
-   
-   if (btnp(0)) then symbol = "a"; action = generators[1] end
-   if (btnp(1)) then symbol = "a!"; action = generators[2] end
-   if (btnp(2)) then symbol = "b"; action = generators[3] end
-   if (btnp(3)) then symbol = "b!"; action = generators[4] end
+
+   if (btnp(0)) then symbol = "\139"; action = generators[1] end
+   if (btnp(1)) then symbol = "\145"; action = generators[2] end
+   if (btnp(2)) then symbol = "\148"; action = generators[3] end
+   if (btnp(3)) then symbol = "\131"; action = generators[4] end
+   if (btnp(4)) then
+      if #word > 0 then
+	 local last = sub(word,#word,#word)
+	 if last == "\145" then symbol = "\139"; action = generators[1] end
+	 if last == "\139" then symbol = "\145"; action = generators[2] end
+	 if last == "\131" then symbol = "\148"; action = generators[3] end
+	 if last == "\148" then symbol = "\131"; action = generators[4] end	    
+      end
+   end
 
    if action != nil then
       matrix = drawn
       drawn = matmul(matrix, action)
       word = word .. symbol
+      word = simplify(word)
       timer = time()
    end
 
-   if matrix[1][1] == 1 and matrix[2][1] == 0 and matrix[1][2] == 0 and matrix[2][2] == 1 then
-      matrix = random_sl2z()
-      drawn = matrix
+   if (abs(matrix[1][1]) == 1 and matrix[2][1] == 0 and
+       matrix[1][2] == 0 and abs(matrix[2][2] == 1)) then
+      start_round()
    end
 end
 
@@ -127,9 +158,12 @@ function _draw()
 	 dy += m012*x + dyd
 	 x += 1/16/8
 	 
-	 c = (flr(2*nx/dx)%8) + (flr(2*ny/dy)%8)
-	 poke( vmem, 17 * c )
-	 poke( vmem + 64, 17 * c )
+	 --c = (flr(2*nx/dx)%8) + (flr(2*ny/dy)%8)
+	 c = peek( 0x4300 + 8*(flr(2*nx/dx)%8) + (flr(2*ny/dy)%8) )
+	 --poke( vmem, 17 * c )
+	 --poke( vmem + 64, 17 * c )
+	 poke( vmem, c )
+	 poke( vmem + 64, c )
 	 vmem = vmem + 1
       end
       vmem = vmem + 64
@@ -143,6 +177,18 @@ function _draw()
    printo(drawn[2][2],30,20)
    printo(word,10,40)
 end
+
+function _init()
+   -- randomize color assignments
+   for i = 0, 7 do
+      for j = 0, 7 do
+	 poke(0x4300 + 8*j + i, 17*flr(rnd(16)))
+      end
+   end
+
+   start_round()
+end
+
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
