@@ -284,8 +284,14 @@ function _draw_playing()
 
    printo(word,64 - 4*#word,center_y + 30, 7)
 
-   printo("score " .. padded(6,bignum(score)) .. " time " .. padded(3,tostr(flr(10*remaining_time))) .. " lives " .. tostr(lives),6,2, 6)
+   printo("score " .. padded(6,bignum(score)), 6, 2, 6)
    printo("   hi " .. padded(6,bignum(dget(0))) ,6,8, 5)
+   local timecolor = 6
+   if (remaining_time < 10) then
+      timecolor = 8 + ((time() % 0.5 > 0.25) and 0 or 1)
+   end
+   printo(" time " .. padded(3,tostr(flr(10*remaining_time))),54,2, timecolor)
+   printo(" lives " .. tostr(lives),91,2, 6)
 end
 
 
