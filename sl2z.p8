@@ -4,10 +4,10 @@ __lua__
 -- sl2z by kisonecat
 
 generators = {
-   {{1,-1},{ 0,1}},
-   {{1, 1},{ 0,1}},
+   {{1, 0},{ 1,1}},
    {{1, 0},{-1,1}},
-   {{1, 0},{ 1,1}}
+   {{1,-1},{ 0,1}},
+   {{1, 1},{ 0,1}}   
 }
 
 function matmul( m1, m2 )
@@ -88,12 +88,13 @@ function _draw()
 
    local scale  = 0.5
    local y = 127 / 32
-   local x
+   local x, c
 
    local dxd = m01^2/256 + 1/8*m01*m11
    local nxd = m00*m01/256 + m01*m10/16 + m00*m11/16
    local dyd = m01^2/256 + m01*m11/8
 
+   
    local start = time()
    
    for j = 1, 64 do
@@ -110,7 +111,7 @@ function _draw()
 	 dy +=  m01^2*x/8 + dyd
 	 x += 1/16
 	 
-	 local c = (flr(2*nx/dx)%8) + (flr(2*ny/dy)%8)
+	 c = (flr(2*nx/dx)%8) + (flr(2*ny/dy)%8)
 	 poke( vmem, c + 16*c )
 	 poke( vmem + 64, c + 16*c )
 	 vmem = vmem + 1
