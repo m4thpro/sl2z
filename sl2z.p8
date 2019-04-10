@@ -45,6 +45,7 @@ function start_round()
    word = ""
    drawn = matrix
    timer = 0
+   deadline = time() + 24
 end
 
 function simplify(word)
@@ -92,9 +93,21 @@ function _update()
       timer = time()
    end
 
+   remaining_time = deadline - time()
+
+   if #word > 13 then
+      start_round()
+   end
+   
+   if (remaining_time < 0) then
+      remaining_time = 0
+      start_round()      
+   end
+   
    if (abs(matrix[1][1]) == 1 and matrix[2][1] == 0 and
        matrix[1][2] == 0 and abs(matrix[2][2] == 1)) then
       start_round()
+      score = score + shr(flr(10*remaining_time),16)
    end
 end
 
@@ -107,6 +120,23 @@ function printo(text,x,y)
    print(text,x,y,15)
 end
 
+function padded(i, s)
+   return sub("0000000000" .. s, #s + 10 - i + 1, #s + 10)
+end
+
+function bignum(val)
+   if (val == 0) then return "0" end
+   
+   local s = ""
+   local v = abs(val)
+   while (v!=0) do
+     s = shl(v % 0x0.000a, 16)..s
+     v /= 10
+   end
+   if (val<0)  s = "-"..s
+   return s 
+ end
+ 
 function _draw()
    local speed = 1.0
    local t = (time() - timer) / speed
@@ -176,6 +206,8 @@ function _draw()
    printo(drawn[1][2],10,20)
    printo(drawn[2][2],30,20)
    printo(word,10,40)
+
+   printo("score " .. padded(6,bignum(score)) .. " time " .. padded(3,tostr(flr(10*remaining_time))),0,0)
 end
 
 function _init()
@@ -187,6 +219,7 @@ function _init()
    end
 
    start_round()
+   score = 0
 end
 
 __gfx__
