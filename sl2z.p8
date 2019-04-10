@@ -108,6 +108,10 @@ function _update()
        matrix[1][2] == 0 and abs(matrix[2][2] == 1)) then
       start_round()
       score = score + shr(flr(10*remaining_time),16)
+
+      if (score > dget(0)) then
+	 dset(0, score)
+      end
    end
 end
 
@@ -201,13 +205,14 @@ function _draw()
 
    --print( stat(1),50,50 )
    
-   printo(drawn[1][1],10,10)
-   printo(drawn[2][1],30,10)
-   printo(drawn[1][2],10,20)
-   printo(drawn[2][2],30,20)
+   printo(drawn[1][1],10,20)
+   printo(drawn[2][1],30,20)
+   printo(drawn[1][2],10,30)
+   printo(drawn[2][2],30,30)
    printo(word,10,40)
 
-   printo("score " .. padded(6,bignum(score)) .. " time " .. padded(3,tostr(flr(10*remaining_time))),0,0)
+   printo("score " .. padded(6,bignum(score)) .. " time " .. padded(3,tostr(flr(10*remaining_time))),64 - (21*4)/2,2)
+   printo("   hi " .. padded(6,bignum(dget(0))) ,64 - (21*4)/2,8)
 end
 
 function _init()
@@ -220,6 +225,8 @@ function _init()
 
    start_round()
    score = 0
+
+   cartdata("kisonecat_sl2z_1")
 end
 
 __gfx__
