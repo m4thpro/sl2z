@@ -94,6 +94,8 @@ function _draw()
    local nxd = m00*m01/256 + m01*m10/16 + m00*m11/16
    local dyd = m01^2/256 + m01*m11/8
 
+   local m012 = m01^2
+   local m0001 = m00*m01
    
    local start = time()
    
@@ -106,9 +108,9 @@ function _draw()
       
       x = -2
       for i = 1, 64 do
-	 dx +=  m01^2*x/8 + dxd
-	 nx +=  m00*m01*x/8 + nxd
-	 dy +=  m01^2*x/8 + dyd
+	 dx += m012*x/8 + dxd
+	 nx += m0001*x/8 + nxd
+	 dy += m012*x/8 + dyd
 	 x += 1/16
 	 
 	 c = (flr(2*nx/dx)%8) + (flr(2*ny/dy)%8)
