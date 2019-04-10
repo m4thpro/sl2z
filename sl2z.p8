@@ -87,7 +87,6 @@ function _draw()
    local cx, cy
 
    local scale  = 0.5
-   local y = 127 / 32
    local x, c
 
    local dxd = m01^2/256 + 1/8*m01*m11
@@ -97,25 +96,27 @@ function _draw()
    local m012 = m01^2
    local m0001 = m00*m01
    
-   local start = time()
+   local y = 127 / 32
+   local y2 = y*y
    
    for j = 1, 64 do
-      dx =  m01^2*y^2 + 4*m01^2 - 4*m01*m11 + m11^2
-      nx =  m00*m01*y^2 + 4*m00*m01 - 2*m01*m10 - 2*m00*m11 + m10*m11
-      dy =  m01^2*y^2 + 4*m01^2 - 4*m01*m11 + m11^2
+      dx =  m012*y2 + 4*m012 - 4*m01*m11 + m11^2
+      nx =  m0001*y2 + 4*m0001 - 2*m01*m10 - 2*m00*m11 + m10*m11
+      dy =  m012*y2 + 4*m012 - 4*m01*m11 + m11^2
       ny =  -m01*m10*y + m00*m11*y
+      y2 += 1/256 - y/8
       y -= 1/16
       
-      x = -2
+      x = -2/8
       for i = 1, 64 do
-	 dx += m012*x/8 + dxd
-	 nx += m0001*x/8 + nxd
-	 dy += m012*x/8 + dyd
-	 x += 1/16
+	 dx += m012*x + dxd
+	 nx += m0001*x + nxd
+	 dy += m012*x + dyd
+	 x += 1/16/8
 	 
 	 c = (flr(2*nx/dx)%8) + (flr(2*ny/dy)%8)
-	 poke( vmem, c + 16*c )
-	 poke( vmem + 64, c + 16*c )
+	 poke( vmem, 17 * c )
+	 poke( vmem + 64, 17 * c )
 	 vmem = vmem + 1
       end
       vmem = vmem + 64
