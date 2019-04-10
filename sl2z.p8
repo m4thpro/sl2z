@@ -2,6 +2,9 @@ pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
 -- sl2z by kisonecat
+cartdata("kisonecat_sl2z_1")
+
+state = "playing"
 
 generators = {
    {{1, 0},{ 1,1}},
@@ -48,6 +51,13 @@ function start_round()
    deadline = time() + 24
 end
 
+function start_playing()
+   state = "playing"
+   start_round()
+   score = 0
+   lives = 5
+end
+
 function simplify(word)
    for i = 0, #word - 1 do
       if sub(word,i,i+1) == "\139\145" then
@@ -67,7 +77,22 @@ function simplify(word)
    return word
 end
 
-function _update()
+function die()
+   sfx(4,0)
+   lives = lives - 1
+   if (lives == 0) then
+      state = "dead"
+   end
+end
+
+
+function _update_dead()
+   if (btnp(4)) or (btnp(5)) then
+      start_playing()
+   end
+end
+
+function _update_playing()
    local action = nil
    local symbol = nil
 
@@ -91,22 +116,35 @@ function _update()
       word = word .. symbol
       word = simplify(word)
       timer = time()
+
+      if symbol == "\139" then sfx(0,0) end
+      if symbol == "\145" then sfx(1,0) end
+      if symbol == "\148" then sfx(2,0) end
+      if symbol == "\131" then sfx(3,0) end
+
+      if (abs(drawn[1][1]) == 1 and drawn[2][1] == 0 and
+	  drawn[1][2] == 0 and abs(drawn[2][2] == 1)) then
+	 sfx(5,0) -- about to win	 
+      end
    end
 
    remaining_time = deadline - time()
 
    if #word > 13 then
+      die()
       start_round()
    end
    
    if (remaining_time < 0) then
+      die()      
       remaining_time = 0
       start_round()      
    end
-   
+
    if (abs(matrix[1][1]) == 1 and matrix[2][1] == 0 and
        matrix[1][2] == 0 and abs(matrix[2][2] == 1)) then
       start_round()
+      sfx(6,0) -- win
       score = score + shr(flr(10*remaining_time),16)
 
       if (score > dget(0)) then
@@ -141,9 +179,22 @@ function bignum(val)
    if (val<0)  s = "-"..s
    return s 
  end
- 
-function _draw()
+
+function _draw_dead()
+   _draw_playing()
+   local message = "game over"
+   printo(message, 64 - #message * 2, 100, 8 + ((time() % 0.5 > 0.25) and 0 or 1) )
+end
+
+function _draw_playing()
    local speed = 1.0
+
+   -- faster if we are about to win
+   if (abs(drawn[1][1]) == 1 and drawn[2][1] == 0 and
+       drawn[1][2] == 0 and abs(drawn[2][2] == 1)) then
+      speed = 0.25
+   end
+   
    local t = (time() - timer) / speed
    local s = 1 - t
 
@@ -222,8 +273,22 @@ function _draw()
 
    printo(word,64 - 4*#word,center_y + 30, 7)
 
-   printo("score " .. padded(6,bignum(score)) .. " time " .. padded(3,tostr(flr(10*remaining_time))),64 - (21*4)/2,2, 6)
-   printo("   hi " .. padded(6,bignum(dget(0))) ,64 - (21*4)/2,8, 5)
+   printo("score " .. padded(6,bignum(score)) .. " time " .. padded(3,tostr(flr(10*remaining_time))) .. " lives " .. tostr(lives),6,2, 6)
+   printo("   hi " .. padded(6,bignum(dget(0))) ,6,8, 5)
+end
+
+
+updaters = { playing = _update_playing,
+	     dead = _update_dead }
+drawers = { playing = _draw_playing,
+	     dead = _draw_dead }
+
+function _update()
+   updaters[state]()
+end
+
+function _draw()
+   drawers[state]()
 end
 
 function _init()
@@ -234,10 +299,7 @@ function _init()
       end
    end
 
-   start_round()
-   score = 0
-
-   cartdata("kisonecat_sl2z_1")
+   start_playing()
 end
 
 __gfx__
@@ -435,3 +497,11 @@ __label__
 88888888881111113388bb11ff664422110011227788113333338888888888bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1111111111111111111111111111111111
 88888888881111113388bb11ff664422110011227788113333338888888888bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1111111111111111111111111111111111
 
+__sfx__
+000100000f150111501315015150181501a1501c1501e150221000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100
+000100001e1501c1501b1501915018150171501515014150221000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100
+00010000210502205023050240502505027050290502b0502c0500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00010000300502f0502d0502b05029050250502305021050210500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000a00001c4500845008450180001e0001d000180001c0001c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000400001bb501db5020b502ab5029b0037b0026b0026b0000b0000b0000b0000b0000b0000b0026b0028b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b0000b00
+0008000019d501dd5021d501cd5020d5025d5020d5026d502bd5000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d00
