@@ -4,14 +4,15 @@ __lua__
 -- sl2z by kisonecat
 cartdata("kisonecat_sl2z_1")
 
-state = "playing"
+state = "title"
 low_time = 10
-   
+remaining_time = time()
+
 generators = {
-   {{1, 0},{ 1,1}},
    {{1, 0},{-1,1}},
-   {{1,-1},{ 0,1}},
-   {{1, 1},{ 0,1}}   
+   {{1, 0},{ 1,1}},
+   {{1, 1},{ 0,1}},
+   {{1,-1},{ 0,1}}   
 }
 
 function matmul( m1, m2 )
@@ -54,6 +55,13 @@ function start_round()
 end
 
 function start_playing()
+   -- randomize color assignments
+   for i = 0, 7 do
+      for j = 0, 7 do
+	 poke(0x4300 + 8*j + i, 17*flr(rnd(16)))
+      end
+   end
+
    state = "playing"
    start_round()
    score = 0
@@ -198,27 +206,7 @@ function _draw_dead()
    printo(message, 64 - #message * 2, 100, 8 + ((time() % 0.5 > 0.25) and 0 or 1) )
 end
 
-function _draw_playing()
-   local speed = 1.0
-
-   -- faster if we are about to win
-   if (abs(drawn[1][1]) == 1 and drawn[2][1] == 0 and
-       drawn[1][2] == 0 and abs(drawn[2][2] == 1)) then
-      speed = 0.25
-   end
-   
-   local t = (time() - timer) / speed
-   local s = 1 - t
-
-   if (t > 1) then
-      matrix = drawn
-   end
-   
-   local m00 = s*matrix[1][1] + t*drawn[1][1]
-   local m01 = s*matrix[1][2] + t*drawn[1][2]
-   local m10 = s*matrix[2][1] + t*drawn[2][1]
-   local m11 = s*matrix[2][2] + t*drawn[2][2]
-   
+function draw_plane(m00, m01, m10, m11)
    local vmem = 0x6000
 
    local dx, nx
@@ -266,23 +254,49 @@ function _draw_playing()
       end
       vmem = vmem + 64
    end
+end
 
-   --print( stat(1),50,50 )
-
+function draw_matrix(m11, m12, m21, m22, center_y)
    pal(15,0)
-   local left = max(#tostr(drawn[1][1]),#tostr(drawn[1][2]))
-   local right = max(#tostr(drawn[2][1]),#tostr(drawn[2][2]))
+   local left = max(#tostr(m11),#tostr(m12))
+   local right = max(#tostr(m21),#tostr(m22))
    
-   local center_y = 45
    spr(64, 64 - left*4 - 12, 1 + center_y - 16, 1, 4)
    spr(64, 64 + right*4 + 12, 1 + center_y - 16, 1, 4, true)
    pal(15,15)
 
-   printo(drawn[1][1],64 - #tostr(drawn[1][1])*4,center_y - 6,7)
-   printo(drawn[2][1],64 + 9 + right * 4 - #tostr(drawn[2][1])*4,center_y - 6,7)
-   printo(drawn[1][2],64 - #tostr(drawn[1][2])*4,center_y + 5,7)
-   printo(drawn[2][2],64 + 9 + right * 4 - #tostr(drawn[2][2])*4,center_y + 5,7)
+   printo(m11,64 - #tostr(m11)*4,center_y - 6,7)
+   printo(m21,64 + 9 + right * 4 - #tostr(m21)*4,center_y - 6,7)
+   printo(m12,64 - #tostr(m12)*4,center_y + 5,7)
+   printo(m22,64 + 9 + right * 4 - #tostr(m22)*4,center_y + 5,7)
 
+end
+
+function _draw_playing()
+   local speed = 1.0
+
+   -- faster if we are about to win
+   if (abs(drawn[1][1]) == 1 and drawn[2][1] == 0 and
+       drawn[1][2] == 0 and abs(drawn[2][2] == 1)) then
+      speed = 0.25
+   end
+   
+   local t = (time() - timer) / speed
+   local s = 1 - t
+
+   if (t > 1) then
+      matrix = drawn
+   end
+   
+   local m00 = s*matrix[1][1] + t*drawn[1][1]
+   local m01 = s*matrix[1][2] + t*drawn[1][2]
+   local m10 = s*matrix[2][1] + t*drawn[2][1]
+   local m11 = s*matrix[2][2] + t*drawn[2][2]
+   
+   draw_plane(m00, m01, m10, m11)
+
+   local center_y = 45
+   draw_matrix( drawn[1][1], drawn[1][2], drawn[2][1], drawn[2][2], center_y )
    printo(word,64 - 4*#word,center_y + 30, 7)
 
    printo("score " .. padded(6,bignum(score)), 6, 2, 6)
@@ -295,11 +309,93 @@ function _draw_playing()
    printo(" lives " .. tostr(lives),91,2, 6)
 end
 
+function how_to_play()
+   state = "howto"
+end
+
+title_menu = 0
+menu = {
+   start_playing,
+   how_to_play
+}
+
+function _update_title()
+   if btnp(2) or btnp(3) then
+      title_menu = 1 - title_menu
+   end
+
+   if btnp(4) or btnp(5) then
+      menu[title_menu + 1]()
+   end
+end
+
+function _update_howto()
+   if btnp(4) or btnp(5) then
+      state = "title"
+   end
+end
+
+function _draw_title()
+   local s = time() % 16 / 16
+
+   for i = 0, 7 do
+      for j = 0, 7 do
+	 local c = (i + j) % 2
+	 poke(0x4300 + 8*j + i, 17*c)
+      end
+   end
+
+   draw_plane(1, sin(s), 0, 1)
+
+   spr(0, 64 - 12*4 + 2, 25, 12, 4 )
+
+   local blinking = (sin(time() * 2) > 0) and 7 or 9
+   printo("start game", 45, 80, (title_menu == 0) and blinking or 6 )
+   printo("how to play", 45, 88, (title_menu == 1) and blinking or 6 )
+
+   printo("\143", 45 - 9, 80 + 8*title_menu, blinking )
+end
+
+function _draw_howto()
+   local s = time() % 16 / 16
+
+   for i = 0, 7 do
+      for j = 0, 7 do
+	 local c = (i + j) % 2
+	 poke(0x4300 + 8*j + i, 17*c)
+      end
+   end
+
+   draw_plane(1, sin(s), 0, 1)
+
+   instructions = {
+      --"012345678901234567890123456789"
+      "\148 and \131 affect the second row",
+      "\148 adds the first row",
+      "\131 subtracts the first row",
+      "",
+      "\139 and \145 affect the first row",
+      "\139 subtracts the second row",
+      "\145 adds the second row",
+      "",
+      "the goal is to get to",
+   }
+
+   for i = 1, #instructions do
+      printo(instructions[i], 2, 8*i, 7 )
+   end
+
+   draw_matrix( 1, 0, 0, 1, 96 )
+end
 
 updaters = { playing = _update_playing,
+	     title = _update_title,
+	     howto = _update_howto,
 	     dead = _update_dead }
 drawers = { playing = _draw_playing,
-	     dead = _draw_dead }
+	    title = _draw_title,
+	    howto = _draw_howto,
+	    dead = _draw_dead }
 
 function _update()
    updaters[state]()
@@ -310,14 +406,6 @@ function _draw()
 end
 
 function _init()
-   -- randomize color assignments
-   for i = 0, 7 do
-      for j = 0, 7 do
-	 poke(0x4300 + 8*j + i, 17*flr(rnd(16)))
-      end
-   end
-
-   start_playing()
 end
 
 __gfx__
