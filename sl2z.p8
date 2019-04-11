@@ -4,17 +4,22 @@ __lua__
 -- sl2z by kisonecat
 cartdata("kisonecat_sl2z_1")
 
-state = "title"
-low_time = 10
-remaining_time = time()
-died_at_time = -1000
-
 generators = {
    {{1, 0},{-1,1}},
    {{1, 0},{ 1,1}},
    {{1, 1},{ 0,1}},
    {{1,-1},{ 0,1}}   
 }
+
+music_playing = false
+function play_background_music()
+   if music_playing then
+      return
+   end
+
+   music_playing = true
+   music(0,0,15)
+end
 
 function matmul( m1, m2 )
    if #m1[1] ~= #m2 then
@@ -52,22 +57,17 @@ function start_round()
    drawn = matrix
    timer = 0
    deadline = time() + 24
-   almost_out_of_time = false
-end
 
-function start_playing()
-   -- randomize color assignments
-   for i = 0, 7 do
-      for j = 0, 7 do
-	 poke(0x4300 + 8*j + i, 17*flr(rnd(16)))
+   -- return to the usual song
+   if almost_out_of_time then      
+      almost_out_of_time = false
+      if lives > 0 then
+	 music(0, 0, 15)
       end
    end
 
-   state = "playing"
-   start_round()
-   score = 0
-   lives = 2
 end
+
 
 function simplify(word)
    for i = 0, #word - 1 do
@@ -92,7 +92,7 @@ function die()
    sfx(4,0)
    lives = lives - 1
    if (lives == 0) then
-      state = "dead"
+      change_state("dead")
    end
    died_at_time = time()
 end
@@ -100,7 +100,7 @@ end
 
 function _update_dead()
    if (btnp(4)) or (btnp(5)) then
-      state = "title"
+      change_state("title")
    end
 end
 
@@ -155,7 +155,7 @@ function _update_playing()
    -- play "almost out of time" tune
    if (remaining_time < low_time) and not almost_out_of_time then
       almost_out_of_time = true
-      sfx(7,1)
+      music(5, 0, 15)
    end
    
    if (remaining_time < 0) then
@@ -318,13 +318,13 @@ function _draw_playing()
 end
 
 function how_to_play()
-   state = "howto"
+   change_state("howto")
 end
 
 title_menu = 0
 menu = {
-   start_playing,
-   how_to_play
+   "playing",
+   "howto"
 }
 
 function _update_title()
@@ -333,13 +333,13 @@ function _update_title()
    end
 
    if btnp(4) or btnp(5) then
-      menu[title_menu + 1]()
+      change_state(menu[title_menu + 1])
    end
 end
 
 function _update_howto()
    if btnp(4) or btnp(5) then
-      state = "title"
+      change_state("title")
    end
 end
 
@@ -400,10 +400,43 @@ updaters = { playing = _update_playing,
 	     title = _update_title,
 	     howto = _update_howto,
 	     dead = _update_dead }
+
 drawers = { playing = _draw_playing,
 	    title = _draw_title,
 	    howto = _draw_howto,
 	    dead = _draw_dead }
+
+function _init_playing()
+   -- randomize color assignments
+   for i = 0, 7 do
+      for j = 0, 7 do
+	 poke(0x4300 + 8*j + i, 17*flr(rnd(16)))
+      end
+   end
+
+   start_round()
+   score = 0
+   lives = 5
+end
+
+function _init_title()
+   play_background_music()
+end
+
+function _init_howto()
+end
+
+function _init_dead()
+   music(6, 0, 15)
+   music_playing = false
+end
+
+initers = {
+   playing = _init_playing,
+   title = _init_title,
+   howto = _init_howto,
+   dead = _init_dead
+}
 
 function _update()
    updaters[state]()
@@ -413,9 +446,22 @@ function _draw()
    drawers[state]()
 end
 
+function change_state(s)
+   if state == s then
+      return
+   end
+   
+   initers[s]()
+   state = s
+end
+
 function _init()
-   -- i find the music unpleasant
-   -- music(0, 0, 15)
+   change_state("title")
+   almost_out_of_time = false
+
+   low_time = 10
+   remaining_time = time()
+   died_at_time = -1000
 end
 
 __gfx__
@@ -628,9 +674,17 @@ __sfx__
 001000001002000000100100000013020000000c02000000110200000011020000000c020000000c020000000c020000000c0200000013020000000c020000001102000000110200000011020000000c02000000
 0010000013210000000020000000102100000000200000000e2100000000200000000c210000000020000000132100000000200000000c2100000000200000000e2100000000200000000e210000000020000000
 001000001021000000002000000013210000000020000000152100000000200000000c210000000020000000132100000000200000000c2100000000200000001521000000002000000015210000000020000000
+000a00000c0100000013010000000c010000001301013000110100e0001101011000130100c000150100c0000c010170000c0101000013010100001301013000110100c0001101010000110100c0000c01010000
+000a00001c0200000000000000001c0000000000000000001c0200000000000000001c0000000000000000001c0200000000000000001c0000000000000000001c0200000000000000001c000000000000000000
+000a00000c0101000010010111001301015100100101110015010171000e0100c100100100e1001101013100100100e10010010111001701015100170100c1001501017100150101c10015010001000c0100c100
+000a000024040111003404011100240401510034040111003002017100340200c100340203e1003002013100100100e10010010111001701015100170100c1001501017100150101c10015010001000c0100c100
+00100000155500c000105500000009550000000405000000105501055010550000000c5500c5500c5500c000005500055000550000000c5500c5500c550000000000000000000000000000000000000000000000
 __music__
 01 08090c44
 00 080a0d44
 00 0a0b0c44
 02 080b0d44
+03 0e100f44
+02 0e110f44
+04 12424344
 
